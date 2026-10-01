@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top ventas 2026</title>
+    
+    <!-- Tipografía -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        darkBg: '#090214',
+                        neonCyan: '#00f2fe',
+                        neonPurple: '#a18cd1',
+                        neonLime: '#d4fc79',
+                        neonCoral: '#ff0844'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            color: #e2e8f0;
+            overflow-x: hidden;
+            transition: background 0.5s ease;
+        }
+
+        /* Temas de Fondo Restaurados */
+        body.theme-nebula {
+            background-color: #030712;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.20), transparent 40%),
+                radial-gradient(circle at 85% 15%, rgba(0, 242, 254, 0.18), transparent 35%),
+                linear-gradient(to bottom, #030712, #070d1e);
+        }
+        body.theme-midnight {
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(14, 165, 233, 0.22), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(30, 64, 175, 0.25), transparent 45%),
+                linear-gradient(to bottom, #020617, #0a142c);
+        }
+        body.theme-emerald {
+            background-color: #02130e;
+            background-image: 
+                radial-gradient(circle at 15% 25%, rgba(16, 185, 129, 0.20), transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.18), transparent 45%),
+                linear-gradient(to bottom, #02130e, #06231a);
+        }
+        body.theme-violet {
+            background-color: #090214;
+            background-image: 
+                radial-gradient(circle at 10% 30%, rgba(217, 70, 239, 0.20), transparent 40%),
+                radial-gradient(circle at 85% 40%, rgba(139, 92, 246, 0.22), transparent 45%),
+                linear-gradient(to bottom, #090214, #180829);
+        }
+        
+        /* Glassmorphism Classes */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .hover-glow-cyan:hover { box-shadow: 0 0 20px rgba(0, 242, 254, 0.6); border-color: rgba(0, 242, 254, 0.4); transform: translateY(-2px); }
+        .hover-glow-purple:hover { box-shadow: 0 0 20px rgba(161, 140, 209, 0.6); border-color: rgba(161, 140, 209, 0.4); transform: translateY(-2px); }
+        .text-gradient-cyan { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* Vistas (SPA) */
+        .view-section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Select styling */
+        select {
+            background-color: rgba(30, 41, 59, 0.8);
+            color: white; border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 0.5rem;
+            padding: 0.5rem 1rem; outline: none; cursor: pointer; -webkit-appearance: none; appearance: none;
+        }
+        select:hover { box-shadow: 0 0 10px rgba(0, 242, 254, 0.4); } option { background-color: #0b0f19; }
+        
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex overflow-hidden theme-nebula">
+
+    <!-- Overlay móvil -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar Responsive -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 w-64 glass-card m-0 md:m-4 flex flex-col justify-between shrink-0">
+        <div>
+            <div class="h-20 flex items-center justify-between px-6 border-b border-white/5">
+                <span class="text-xl font-extrabold text-gradient-cyan truncate">Top ventas 2026</span>
+                <button class="md:hidden text-white" onclick="toggleSidebar()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <!-- Menú de Navegación Completo -->
+            <nav class="p-4 space-y-3 mt-4">
+                <button onclick="switchView('dashboard', this)" class="nav-btn w-full flex items-center gap-4 px-4 py-3 bg-white/10 rounded-xl text-white font-medium transition-all shadow-[0_0_15px_rgba(0,242,254,0.15)] border border-neonCyan/30">
+                    <svg class="w-5 h-5 text-neonCyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    <span>Resumen</span>
+                </button>
+                <button onclick="switchView('pedidos', this)" class="nav-btn hover-glow-purple w-full flex items-center gap-4 px-4 py-3 hover:bg-white/5 rounded-xl text-gray-400 transition-all border border-transparent">
+                    <svg class="w-5 h-5 text-neonPurple" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    <span>Pedidos</span>
+                </button>
+                <button onclick="switchView('clientes', this)" class="nav-btn hover-glow-cyan w-full flex items-center gap-4 px-4 py-3 hover:bg-white/5 rounded-xl text-gray-400 transition-all border border-transparent">
+                    <svg class="w-5 h-5 text-neonLime" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span>Clientes</span>
+                </button>
+            </nav>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto h-full p-4 lg:p-8 relative">
+        <header class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-8">
+            <div class="flex items-center gap-4">
+                <button class="md:hidden text-white bg-white/10 p-2 rounded-lg" onclick="toggleSidebar()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <div id="header-title">
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Resumen Global</h1>
+                    <p class="text-gray-400 mt-1 text-sm md:text-base font-medium">Métricas principales de la empresa</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                <!-- Selector de Fondos Restaurado -->
+                <div class="flex items-center gap-2 glass-card px-3 py-1.5 border border-white/10">
+                    <span class="text-xs text-gray-300 font-semibold hidden sm:inline">Tema:</span>
+                    <button onclick="setTheme('theme-nebula', this)" title="Nebula Cósmica" class="theme-btn w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-cyan-400 border-2 border-white scale-110 shadow-sm transition-transform"></button>
+                    <button onclick="setTheme('theme-midnight', this)" title="Azul Medianoche" class="theme-btn w-6 h-6 rounded-full bg-gradient-to-tr from-blue-700 to-sky-400 border border-white/20 transition-transform"></button>
+                    <button onclick="setTheme('theme-violet', this)" title="Violeta Eclipse" class="theme-btn w-6 h-6 rounded-full bg-gradient-to-tr from-purple-800 to-pink-500 border border-white/20 transition-transform"></button>
+                    <button onclick="setTheme('theme-emerald', this)" title="Verde Esmeralda Neón" class="theme-btn w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-800 to-teal-400 border border-white/20 transition-transform"></button>
+                </div>
+
+                <!-- Botón CSV Upload -->
+                <label for="csv-upload" class="hover-glow-cyan flex-1 sm:flex-none text-center px-4 py-2 bg-white/5 border border-cyan-400/30 rounded-xl text-white text-sm font-semibold cursor-pointer transition-all flex justify-center items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    CSV
+                </label>
+                <input type="file" id="csv-upload" accept=".csv" class="hidden">
+            </div>
+        </header>
+
+        <!-- VISTA 1: DASHBOARD -->
+        <section id="view-dashboard" class="view-section active w-full">
+            <div id="kpi-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                <div class="glass-card hover-glow-cyan p-5">
+                    <p class="text-gray-400 text-xs md:text-sm font-semibold mb-1">Ingresos Totales</p>
+                    <h3 class="text-2xl md:text-3xl font-bold text-white">€124,500</h3>
+                    <div class="mt-4 text-neonLime text-xs md:text-sm font-bold flex gap-1">↑ 12.5%</div>
+                </div>
+                <div class="glass-card hover-glow-purple p-5">
+                    <p class="text-gray-400 text-xs md:text-sm font-semibold mb-1">Unidades Vendidas</p>
+                    <h3 class="text-2xl md:text-3xl font-bold text-white">3,842</h3>
+                    <div class="mt-4 text-neonLime text-xs md:text-sm font-bold flex gap-1">↑ 8.2%</div>
+                </div>
+                <div class="glass-card hover-glow-cyan p-5">
+                    <p class="text-gray-400 text-xs md:text-sm font-semibold mb-1">Tasa de Conversión</p>
+                    <h3 class="text-2xl md:text-3xl font-bold text-white">4.8%</h3>
+                    <div class="mt-4 text-neonCoral text-xs md:text-sm font-bold flex gap-1">↓ 1.1%</div>
+                </div>
+                <div class="glass-card hover-glow-purple p-5">
+                    <p class="text-gray-400 text-xs md:text-sm font-semibold mb-1">Satisfacción</p>
+                    <h3 class="text-2xl md:text-3xl font-bold text-white">98%</h3>
+                    <div class="mt-4 text-neonLime text-xs md:text-sm font-bold flex gap-1">↑ 0.5%</div>
+                </div>
+                
+                <!-- Botón Añadir Métrica -->
+                <button id="add-kpi-btn" onclick="openModal()" class="glass-card p-5 flex flex-col items-center justify-center border-dashed border-2 border-white/20 hover:border-cyan-400/50 hover:bg-white/5 transition-all group min-h-[120px]">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-cyan-500/20 group-hover:text-cyan-400 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </div>
+                    <span class="mt-2 text-sm text-gray-400 font-medium group-hover:text-white">Añadir Métrica</span>
+                </button>
+            </div>
+
+            <div class="glass-card p-4 md:p-6 mb-8 w-full">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h3 class="text-lg md:text-xl font-bold text-white">Tendencia Principal</h3>
+                    <div class="relative">
+                        <!-- Selector de Gráficos Restaurado -->
+                        <select id="chartTypeSelector" onchange="changeMainChartType(this.value)" class="text-sm">
+                            <option value="line">Línea de Tendencia</option>
+                            <option value="bar">Diagrama de Barras</option>
+                            <option value="scatter">Línea de Puntos (Scatter)</option>
+                            <option value="pie">Gráfico Proporcional (Quesito)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative h-64 md:h-80 w-full">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 2: PEDIDOS -->
+        <section id="view-pedidos" class="view-section w-full">
+            <div class="glass-card p-4 md:p-6 w-full mb-8">
+                <h3 class="text-lg md:text-xl font-bold text-white mb-2">Estado Logístico Mensual</h3>
+                <p class="text-gray-400 mb-6 text-sm">Desglose semanal de pedidos completados y en proceso.</p>
+                <div class="relative h-64 md:h-80 w-full">
+                    <canvas id="pedidosChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 3: CLIENTES -->
+        <section id="view-clientes" class="view-section w-full">
+            <div class="glass-card p-4 md:p-6 w-full mb-8">
+                <div class="mb-6">
+                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Comportamiento de Cartera</h3>
+                    <p class="text-gray-400 text-sm">Evolución de alta de clientes por categoría.</p>
+                </div>
+                <div class="relative h-72 md:h-96 w-full">
+                    <canvas id="clientesChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL PARA AÑADIR MÉTRICAS (Reemplaza al prompt) -->
+    <div id="custom-modal" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-card border border-cyan-500/30 p-6 md:p-8 w-11/12 max-w-md shadow-[0_0_40px_rgba(0,242,254,0.15)] transform scale-95 transition-transform duration-300" id="modal-content">
+            <h2 class="text-xl font-bold text-white mb-4">Nueva Métrica Personalizada</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Nombre del KPI</label>
+                    <input type="text" id="m-name" placeholder="Ej. Nuevos Leads" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neonCyan transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Valor Principal</label>
+                    <input type="text" id="m-value" placeholder="Ej. 1,450" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neonCyan transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Variación (%)</label>
+                    <input type="text" id="m-var" placeholder="Ej. +15% o -5%" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neonCyan transition-colors">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-white/10 transition-colors">Cancelar</button>
+                <button onclick="saveMetric()" class="px-4 py-2 bg-neonCyan text-black rounded-lg text-sm font-bold shadow-[0_0_15px_rgba(0,242,254,0.4)] hover:bg-white transition-colors">Añadir Métrica</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 glass-card bg-neonCyan/20 border-neonCyan px-6 py-4 rounded-xl text-white font-bold opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+        Acción completada.
+    </div>
+
+    <script>
+        // --- 1. WEB AUDIO API ---
+        let audioCtx;
+        function playClick() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+        document.addEventListener('mousedown', e => {
+            if(e.target.closest('button, select, label, .glass-card, input')) playClick();
+        });
+
+        // --- 2. RESPONSIVE SIDEBAR ---
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // --- 3. NAVEGACIÓN SPA ---
+        const viewData = {
+            'dashboard': { title: 'Resumen Global', sub: 'Métricas principales de la empresa' },
+            'pedidos': { title: 'Gestión de Pedidos', sub: 'Control logístico y entregas recientes' },
+            'clientes': { title: 'Cartera de Clientes', sub: 'Análisis de comportamiento y retención' }
+        };
+        function switchView(viewId, btn) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('bg-white/10', 'text-white', 'shadow-[0_0_15px_rgba(0,242,254,0.15)]', 'border-neonCyan/30');
+                b.classList.add('text-gray-400', 'border-transparent');
+            });
+            btn.classList.remove('text-gray-400', 'border-transparent');
+            btn.classList.add('bg-white/10', 'text-white', 'shadow-[0_0_15px_rgba(0,242,254,0.15)]', 'border-neonCyan/30');
+
+            document.getElementById('header-title').innerHTML = `
+                <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">${viewData[viewId].title}</h1>
+                <p class="text-gray-400 mt-1 text-sm md:text-base font-medium">${viewData[viewId].sub}</p>
+            `;
+            if(window.innerWidth < 768) toggleSidebar(); // Auto-close on mobile
+        }
+
+        // --- 4. TEMAS DE FONDO ---
+        function setTheme(themeClass, btn) {
+            document.body.className = `font-sans antialiased h-screen flex overflow-hidden ${themeClass}`;
+            document.querySelectorAll('.theme-btn').forEach(b => {
+                b.classList.remove('border-white', 'scale-110');
+                b.classList.add('border-white/20');
+            });
+            btn.classList.add('border-white', 'scale-110');
+            btn.classList.remove('border-white/20');
+        }
+
+        // --- 5. TOAST ---
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.opacity = '1';
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+        }
+
+        // --- STREAMING_CHUNK: Custom Modal Logic for Dynamic KPIs... ---
+        // --- 6. MODAL PERSONALIZADO (Métricas) ---
+        const modal = document.getElementById('custom-modal');
+        const modalContent = document.getElementById('modal-content');
+        
+        function openModal() {
+            document.getElementById('m-name').value = '';
+            document.getElementById('m-value').value = '';
+            document.getElementById('m-var').value = '';
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function saveMetric() {
+            const nombre = document.getElementById('m-name').value.trim();
+            const valor = document.getElementById('m-value').value.trim();
+            const variacion = document.getElementById('m-var').value.trim();
+
+            if(!nombre || !valor || !variacion) {
+                alert("Por favor, rellena todos los campos.");
+                return;
+            }
+
+            const isNegative = variacion.startsWith('-');
+            const colorClass = isNegative ? 'text-neonCoral' : 'text-neonLime';
+            const arrow = isNegative ? '↓' : '↑';
+            const varClean = variacion.replace(/[+↓↑-]/g, '').trim();
+            const randomGlow = Math.random() > 0.5 ? 'hover-glow-cyan' : 'hover-glow-purple';
+
+            const newCard = document.createElement('div');
+            newCard.className = `glass-card ${randomGlow} p-5 relative group animate-[fadeIn_0.3s_ease-out]`;
+            newCard.innerHTML = `
+                <button onclick="removeMetric(this)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1" title="Borrar">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <p class="text-gray-400 text-xs md:text-sm font-semibold mb-1 truncate pr-6">${nombre}</p>
+                <h3 class="text-2xl md:text-3xl font-bold text-white truncate">${valor}</h3>
+                <div class="mt-4 ${colorClass} text-xs md:text-sm font-bold flex gap-1">${arrow} ${varClean}</div>
+            `;
+
+            const btnContainer = document.getElementById('add-kpi-btn');
+            document.getElementById('kpi-grid').insertBefore(newCard, btnContainer);
+            
+            closeModal();
+            showToast("Métrica añadida al panel.");
+        }
+
+        function removeMetric(btn) {
+            const card = btn.closest('.glass-card');
+            card.style.transform = "scale(0.9)";
+            card.style.opacity = "0";
+            setTimeout(() => card.remove(), 300);
+        }
+
+        // --- STREAMING_CHUNK: Initializing all 3 Charts with Chart.js... ---
+        // --- 7. GRÁFICOS (Chart.js) ---
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = '"Plus Jakarta Sans", sans-serif';
+        
+        let mainChartObj;
+        let chartLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+        let chartData = [120, 190, 150, 220, 180, 280, 250];
+
+        window.onload = () => {
+            // Main Chart
+            const ctxMain = document.getElementById('mainChart').getContext('2d');
+            let gradMain = ctxMain.createLinearGradient(0, 0, 0, 400);
+            gradMain.addColorStop(0, 'rgba(0, 242, 254, 0.6)');
+            gradMain.addColorStop(1, 'rgba(0, 242, 254, 0.0)');
+
+            mainChartObj = new Chart(ctxMain, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Valor Numérico',
+                        data: chartData,
+                        borderColor: '#00f2fe',
+                        backgroundColor: gradMain,
+                        borderWidth: 3, pointRadius: 5, fill: true, tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } }
+                }
+            });
+
+            // Pedidos Chart (Bar Stacked)
+            new Chart(document.getElementById('pedidosChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                    datasets: [
+                        { label: 'Completados', data: [120, 150, 180, 190], backgroundColor: '#d4fc79' },
+                        { label: 'En proceso', data: [40, 30, 50, 20], backgroundColor: '#00f2fe' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+            });
+
+            // Clientes Chart (Line)
+            new Chart(document.getElementById('clientesChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                    datasets: [
+                        { label: 'VIP', data: [50, 65, 80, 120, 150, 200], borderColor: '#d4fc79', backgroundColor: 'transparent', tension: 0.4 },
+                        { label: 'Recurrentes', data: [300, 320, 310, 380, 400, 450], borderColor: '#00f2fe', backgroundColor: 'transparent', tension: 0.4 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        };
+
+        // --- STREAMING_CHUNK: Chart Type Switcher and CSV parsing logic... ---
+        // --- 8. SELECTOR TIPO DE GRÁFICO ---
+        function changeMainChartType(newType) {
+            if (!mainChartObj) return;
+
+            if (newType === 'pie') {
+                mainChartObj.config.type = 'doughnut';
+                mainChartObj.data.datasets[0].backgroundColor = ['#00f2fe', '#a18cd1', '#d4fc79', '#ff0844', '#3b82f6', '#f59e0b', '#10b981'];
+                mainChartObj.data.datasets[0].borderWidth = 1;
+                mainChartObj.data.datasets[0].borderColor = '#05050a';
+                mainChartObj.options.scales.x.display = false;
+                mainChartObj.options.scales.y.display = false;
+                mainChartObj.options.plugins.legend.display = true;
+            } else if (newType === 'scatter') {
+                mainChartObj.config.type = 'scatter';
+                // Convert labels to index for scatter if simple format
+                mainChartObj.data.datasets[0].data = chartData.map((val, idx) => ({x: idx, y: val}));
+                mainChartObj.data.datasets[0].backgroundColor = '#00f2fe';
+                mainChartObj.options.scales.x.display = true;
+                mainChartObj.options.scales.y.display = true;
+                mainChartObj.options.plugins.legend.display = false;
+            } else {
+                mainChartObj.config.type = newType;
+                mainChartObj.data.datasets[0].data = chartData; // restore normal data array
+                mainChartObj.data.datasets[0].borderWidth = 3;
+                let grad = mainChartObj.ctx.createLinearGradient(0, 0, 0, 400);
+                grad.addColorStop(0, 'rgba(0, 242, 254, 0.6)');
+                grad.addColorStop(1, 'rgba(0, 242, 254, 0.0)');
+                mainChartObj.data.datasets[0].backgroundColor = newType === 'bar' ? '#00f2fe' : grad;
+                mainChartObj.options.scales.x.display = true;
+                mainChartObj.options.scales.y.display = true;
+                mainChartObj.options.plugins.legend.display = false;
+            }
+            mainChartObj.update();
+        }
+
+        // --- 9. SUBIDA CSV ---
+        document.getElementById('csv-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const text = event.target.result;
+                const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                
+                let newLabels = [];
+                let newData = [];
+
+                lines.forEach(line => {
+                    const parts = line.split(',');
+                    if (parts.length >= 2) {
+                        const val = parseFloat(parts[1].trim());
+                        if (!isNaN(val)) {
+                            newLabels.push(parts[0].trim());
+                            newData.push(val);
+                        }
+                    }
+                });
+
+                if (newData.length > 0) {
+                    chartLabels = newLabels;
+                    chartData = newData;
+                    
+                    // Aseguramos que los datos se ajusten si estamos en scatter
+                    if(mainChartObj.config.type === 'scatter'){
+                         mainChartObj.data.datasets[0].data = chartData.map((val, idx) => ({x: idx, y: val}));
+                    } else {
+                         mainChartObj.data.datasets[0].data = chartData;
+                    }
+                    
+                    mainChartObj.data.labels = chartLabels;
+                    mainChartObj.update();
+                    showToast("Gráfico actualizado con CSV");
+                } else {
+                    showToast("Error: El CSV debe tener formato 'Etiqueta,Numero'");
+                }
+                e.target.value = '';
+            };
+            reader.readAsText(file);
+        });
+    </script>
+</body>
+</html>
